@@ -1,0 +1,14 @@
+Django==4.2.7
+django-crispy-forms==2.1
+crispy-bootstrap5==2023.10
+django-simple-history==3.4.0
+python-dotenv==1.0.0
+Pillow==10.0.1
+django-filter==23.3
+openpyxl==3.1.2
+reportlab==4.0.7
+python-dateutil==2.8.2
+django-widget-tweaks==1.5.0
+whitenoise==6.5.0
+gunicorn==21.2.0
+python-decouple==3.8

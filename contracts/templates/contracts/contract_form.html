@@ -1,0 +1,1649 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Editar Contrato{% else %}Novo Contrato{% endif %} - Sistema de Gestão de Contratos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    {% if form.instance.pk %}Editar Contrato{% else %}Novo Contrato{% endif %}
+                </h1>
+                <a href="{% url 'contracts:contract_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Voltar
+                </a>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'contracts:contract_list' %}">Contratos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% if form.instance.pk %}Editar{% else %}Novo{% endif %}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Mensagens de feedback -->
+    <div id="form-messages" class="mb-4" style="display: none;">
+        <div class="alert alert-dismissible fade show" role="alert">
+            <span id="message-text"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    </div>
+
+    <!-- Modal de confirmação para sair da página -->
+    <div class="modal fade" id="unsavedChangesModal" tabindex="-1" aria-labelledby="unsavedChangesModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="unsavedChangesModalLabel">Alterações não salvas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Você tem alterações não salvas neste formulário. Tem certeza que deseja sair desta página?</p>
+                    <p class="small text-muted">Todas as alterações não salvas serão perdidas.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning" id="confirmLeaveBtn">Sair sem salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">Informações do Contrato</h5>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        {{ form.contract_number|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.company|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.contract_term|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label class="form-label">Moeda</label>
+                            <input type="text" class="form-control" value="Real (R$)" readonly>
+                            {{ form.currency }}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.start_date|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.end_date|as_crispy_field }}
+                    </div>
+                    <div class="col-12 mb-3">
+                        {{ form.value|as_crispy_field }}
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">Dados do Fiscal</h5>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.fiscal_name|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.fiscal_registration|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.alternate_fiscal_name|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.alternate_fiscal_registration|as_crispy_field }}
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">Documentação</h5>
+                    </div>
+                    <div class="col-12 mb-3">
+                        {{ form.contract_document|as_crispy_field }}
+                        <small class="form-text text-muted">
+                            Formato: PDF, DOC, DOCX (Tamanho máximo: 10MB)
+                        </small>
+                    </div>
+                    <div class="col-12 mb-3">
+                        {{ form.fiscal_portaria|as_crispy_field }}
+                        <small class="form-text text-muted">
+                            Formato: PDF, DOC, DOCX (Tamanho máximo: 10MB)
+                        </small>
+                    </div>
+                    <div class="col-12 mb-3" id="additive-term-field">
+                        {{ form.additive_term|as_crispy_field }}
+                        <small class="form-text text-muted">
+                            Obrigatório apenas para termos aditivos. Formato: PDF, DOC, DOCX (Tamanho máximo: 10MB)
+                        </small>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">Observações</h5>
+                    </div>
+                    <div class="col-12 mb-3">
+                        {{ form.notes|as_crispy_field }}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div id="auto-save-indicator" class="text-muted small d-none">
+                        <i class="bi bi-cloud"></i> <span>Pronto para salvar</span>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'contracts:contract_list' %}" class="btn btn-outline-secondary me-md-2">
+                            <i class="bi bi-arrow-left"></i> Voltar para a lista
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Salvar Contrato
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Contêiner para notificações -->
+<div id="notification-container" class="notification-container"></div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos personalizados para os campos de upload de arquivo */
+    .file-upload-container {
+        margin-bottom: 1rem;
+    }
+    
+    .file-upload-container .form-control[type="file"] {
+        padding: 0.375rem 0.75rem;
+        height: auto;
+        line-height: 1.5;
+    }
+    
+    .file-upload-container .btn-clear-file {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .file-upload-container .btn-clear-file:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .file-upload-container .file-preview {
+        margin-top: 0.5rem;
+    }
+    
+    .file-upload-container .file-preview img {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+    }
+    
+    .file-upload-container .file-preview .file-info {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+    }
+    
+    /* Melhora a acessibilidade do foco */
+    .file-upload-container .form-control:focus,
+    .file-upload-container .btn:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        outline: none;
+    }
+    
+    /* Estilo para quando houver erro no campo */
+    .is-invalid ~ .btn-clear-file {
+        border-color: #dc3545;
+    }
+    
+    /* Estilos para notificações do sistema */
+    .notification-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1100;
+        max-width: 350px;
+    }
+    
+    .notification {
+        position: relative;
+        padding: 1rem 1.5rem 1rem 1rem;
+        margin-bottom: 1rem;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        transform: translateX(100%);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    .notification.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    .notification.hide {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    
+    .notification-success {
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border-left: 4px solid #0f5132;
+    }
+    
+    .notification-error {
+        background-color: #f8d7da;
+        color: #842029;
+        border-left: 4px solid #842029;
+    }
+    
+    .notification-warning {
+        background-color: #fff3cd;
+        color: #664d03;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .notification-info {
+        background-color: #cff4fc;
+        color: #055160;
+        border-left: 4px solid #0dcaf0;
+    }
+    
+    .notification-close {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0.7;
+    }
+    
+    .notification-close:hover {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Função para exibir notificações
+    function showNotification(message, type = 'info', duration = 5000) {
+        // Tipos suportados: success, error, warning, info
+        const types = ['success', 'error', 'warning', 'info'];
+        type = types.includes(type) ? type : 'info';
+        
+        // Cria o elemento da notificação
+        const notificationId = 'notification-' + Date.now();
+        const notification = document.createElement('div');
+        notification.id = notificationId;
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <button class="notification-close" data-notification-id="${notificationId}" aria-label="Fechar notificação">&times;</button>
+            <div class="notification-message">${message}</div>
+        `;
+        
+        // Adiciona a notificação ao contêiner
+        const container = document.getElementById('notification-container');
+        if (!container) return;
+        
+        container.appendChild(notification);
+        
+        // Força o navegador a reconhecer a mudança de estilo
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        
+        // Configura o botão de fechar
+        const closeButton = notification.querySelector('.notification-close');
+        if (closeButton) {
+            closeButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                hideNotification(notificationId);
+            });
+        }
+        
+        // Remove a notificação após a duração especificada
+        if (duration > 0) {
+            setTimeout(() => {
+                hideNotification(notificationId);
+            }, duration);
+        }
+    }
+    
+    // Função para esconder uma notificação
+    function hideNotification(notificationId) {
+        const notification = document.getElementById(notificationId);
+        if (!notification) return;
+        
+        notification.classList.remove('show');
+        notification.classList.add('hide');
+        
+        // Remove o elemento do DOM após a animação
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }
+    
+
+    
+    // Função para exibir mensagem de sucesso/erro formatada
+    function showAlert(type, message) {
+        // Tipos suportados: success, error, warning, info
+        const types = ['success', 'error', 'warning', 'info'];
+        type = types.includes(type) ? type : 'info';
+        
+        // Mapeia os ícones do Bootstrap Icons para cada tipo
+        const icons = {
+            'success': 'check-circle-fill',
+            'error': 'exclamation-triangle-fill',
+            'warning': 'exclamation-triangle-fill',
+            'info': 'info-circle-fill'
+        };
+        
+        // Mapeia os títulos para cada tipo
+        const titles = {
+            'success': 'Sucesso!',
+            'error': 'Erro!',
+            'warning': 'Aviso!',
+            'info': 'Informação'
+        };
+        
+        // Cria a notificação formatada
+        const notificationHtml = `
+            <div class="d-flex align-items-start">
+                <i class="bi bi-${icons[type]} me-2" style="font-size: 1.25rem;" aria-hidden="true"></i>
+                <div>
+                    <strong>${titles[type]}</strong><br>
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        // Exibe a notificação
+        showNotification(notificationHtml, type, 5000);
+    }
+    
+    // Função para esconder uma notificação
+    function hideNotification(notificationId) {
+        const notification = document.getElementById(notificationId);
+        if (notification) {
+            notification.classList.remove('show');
+            notification.classList.add('hide');
+            
+            // Remove o elemento do DOM após a animação
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
+        }
+    }
+    
+    // Inicialização dos componentes quando o documento estiver pronto
+    $(document).ready(function() {
+        // Configura o evento de clique para fechar notificações
+        $(document).on('click', '.notification-close', function(e) {
+            e.preventDefault();
+            const notificationId = $(this).data('notification-id');
+            if (notificationId) {
+                hideNotification(notificationId);
+            }
+        });
+        
+        // Inicializa datepickers
+    $('.dateinput').datepicker({
+        dateFormat: 'dd/mm/yy',
+        dayNames: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'],
+        dayNamesMin: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S', 'D'],
+        dayNamesShort: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+        monthNames: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+        monthNamesShort: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+        nextText: 'Próximo',
+        prevText: 'Anterior',
+        closeText: 'Fechar',
+        currentText: 'Hoje',
+        changeMonth: true,
+        changeYear: true,
+        yearRange: 'c-100:c+10',
+        showButtonPanel: true,
+        showAnim: 'fadeIn',
+        showOtherMonths: true,
+        selectOtherMonths: true,
+        showOn: 'both',
+        buttonImageOnly: true,
+        buttonImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNhbGVuZGFyIj48cGF0aCBkPSJNOCAydjQiLz48cGF0aCBkPSJNMTYgMnY0Ii8+PHJlY3Qgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiB4PSIzIiB5PSI0IiByeD0iMiIvPjxwYXRoIGQ9Ik0zIDEwaDE4Ii8+PC9zdmc+',
+        buttonText: 'Selecionar data',
+        beforeShow: function(input, inst) {
+            setTimeout(function() {
+                inst.dpDiv.css({
+                    'z-index': 1060 // Garante que o datepicker fique acima dos modais do Bootstrap
+                });
+            }, 0);
+        }
+    });
+    
+    // Formata a data para o formato brasileiro
+    $.datepicker.setDefaults($.datepicker.regional['pt-BR']);
+    
+    // Inicializa selects estilizados
+    if ($.fn.select2) {
+        $('select').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Selecione uma opção',
+            allowClear: true,
+            dropdownParent: $('body')
+        });
+    }
+    
+    // Validação de formulário
+    (function() {
+        'use strict';
+        
+        // Função para exibir mensagens no formulário
+        function showFormAlert(type, message) {
+            // Usa a função showAlert global para exibir a notificação
+            showAlert(type, message);
+            
+            // Atualiza as mensagens do formulário (se necessário)
+            var $messages = $('#form-messages');
+            if ($messages.length) {
+                var $alert = $messages.find('.alert');
+                var $messageText = $messages.find('#message-text');
+                
+                // Remove classes de tipo de alerta anteriores
+                $alert.removeClass('alert-success alert-danger alert-warning alert-info');
+                
+                // Adiciona a classe apropriada
+                $alert.addClass('alert-' + type);
+                
+                // Define o texto da mensagem
+                $messageText.html(message);
+                
+                // Exibe a mensagem
+                $messages.slideDown();
+                
+                // Esconde a mensagem após 5 segundos
+                setTimeout(function() {
+                    $messages.slideUp();
+                }, 5000);
+            }
+        
+        // Função para exibir erros de validação
+        function showValidationErrors(form, errors) {
+            // Limpa mensagens de erro anteriores
+            $('.is-invalid', form).removeClass('is-invalid');
+            $('.invalid-feedback').remove();
+            
+            // Adiciona novas mensagens de erro
+            $.each(errors, function(field, messages) {
+                var $field = $('[name=' + field + ']', form);
+                var $formGroup = $field.closest('.form-group, .mb-3');
+                
+                // Adiciona classe de erro ao campo
+                $field.addClass('is-invalid');
+                
+                // Adiciona mensagem de erro
+                var errorHtml = '<div class="invalid-feedback">' + messages.join('<br>') + '</div>';
+                $formGroup.append(errorHtml);
+                
+                // Rola até o primeiro campo com erro
+                if (Object.keys(errors)[0] === field) {
+                    $('html, body').animate({
+                        scrollTop: $field.offset().top - 100
+                    }, 500);
+                }
+            });
+            
+            // Exibe mensagem de erro geral
+            showAlert('Por favor, corrija os erros no formulário.', 'danger');
+        }
+        
+        // Função para validar todo o formulário antes do envio
+        function validateForm($form) {
+            var isValid = true;
+            
+            // Valida todos os campos obrigatórios
+            $form.find('[required]').each(function() {
+                var $field = $(this);
+                var value = $field.val();
+                var fieldName = $field.attr('name');
+                
+                // Verifica se o campo está vazio
+                if (!value || (typeof value === 'string' && !value.trim())) {
+                    $field.addClass('is-invalid');
+                    $field.siblings('.invalid-feedback').remove();
+                    $field.after('<div class="invalid-feedback">Este campo é obrigatório.</div>');
+                    isValid = false;
+                }
+                
+                // Validação específica para e-mail
+                if (fieldName && (fieldName.includes('email') || $field.attr('type') === 'email') && value) {
+                    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(value)) {
+                        $field.addClass('is-invalid');
+                        $field.siblings('.invalid-feedback').remove();
+                        $field.after('<div class="invalid-feedback">Por favor, insira um endereço de e-mail válido.</div>');
+                        isValid = false;
+                    }
+                }
+                
+                // Validação de matrícula fiscal (7 dígitos)
+                if ((fieldName === 'fiscal_registration' || fieldName === 'alternate_fiscal_registration') && value) {
+                    if (!/^\d{7}$/.test(value)) {
+                        $field.addClass('is-invalid');
+                        $field.siblings('.invalid-feedback').remove();
+                        $field.after('<div class="invalid-feedback">A matrícula deve conter exatamente 7 dígitos.</div>');
+                        isValid = false;
+                    }
+                }
+                
+                // Validação de CPF/CNPJ
+                if ($field.hasClass('document') && value) {
+                    var cleanValue = value.replace(/[^\d]/g, '');
+                    if (cleanValue.length === 11) {
+                        if (!validateCPF(cleanValue)) {
+                            $field.addClass('is-invalid');
+                            $field.siblings('.invalid-feedback').remove();
+                            $field.after('<div class="invalid-feedback">Por favor, insira um CPF válido.</div>');
+                            isValid = false;
+                        }
+                    } else if (cleanValue.length === 14) {
+                        if (!validateCNPJ(cleanValue)) {
+                            $field.addClass('is-invalid');
+                            $field.siblings('.invalid-feedback').remove();
+                            $field.after('<div class="invalid-feedback">Por favor, insira um CNPJ válido.</div>');
+                            isValid = false;
+                        }
+                    } else if (cleanValue.length > 0) {
+                        $field.addClass('is-invalid');
+                        $field.siblings('.invalid-feedback').remove();
+                        $field.after('<div class="invalid-feedback">Por favor, insira um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.</div>');
+                        isValid = false;
+                    }
+                }
+                
+                // Validação de datas
+                if ($field.hasClass('dateinput') && value) {
+                    if (!validateDateField($field)) {
+                        isValid = false;
+                    }
+                }
+            });
+            
+            return isValid;
+        }
+        
+        // Variável para controlar o salvamento automático
+        var autoSaveTimer;
+        var isAutoSaving = false;
+        
+        // Função para salvar o rascunho do formulário
+        function saveDraft() {
+            if (isAutoSaving) return;
+            
+            var $form = $('form.needs-validation');
+            var formData = new FormData($form[0]);
+            
+            // Adiciona o flag de rascunho
+            formData.append('is_draft', 'true');
+            
+            isAutoSaving = true;
+            var $saveIndicator = $('#auto-save-indicator');
+            
+            // Mostra indicador de salvamento
+            $saveIndicator.html('<i class="bi bi-cloud-arrow-up"></i> Salvando rascunho...').removeClass('d-none');
+            
+            $.ajax({
+                url: $form.attr('action') || window.location.href,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Atualiza o ID do contrato se for uma nova criação
+                        if (response.contract_id && !$form.find('[name="id"]').length) {
+                            $form.append('<input type="hidden" name="id" value="' + response.contract_id + '">');
+                        }
+                        
+                        // Atualiza a URL com o ID do contrato se necessário
+                        if (response.contract_id && !window.location.href.includes('/' + response.contract_id + '/')) {
+                            var newUrl = window.location.href.replace(/\/create\/?$/, '/' + response.contract_id + '/edit/');
+                            window.history.replaceState({}, document.title, newUrl);
+                        }
+                        
+                        $saveIndicator.html('<i class="bi bi-cloud-check"></i> Rascunho salvo em ' + new Date().toLocaleTimeString());
+                    } else {
+                        $saveIndicator.html('<i class="bi bi-cloud-slash"></i> Falha ao salvar rascunho');
+                    }
+                },
+                error: function() {
+                    $saveIndicator.html('<i class="bi bi-cloud-slash"></i> Erro ao conectar ao servidor');
+                },
+                complete: function() {
+                    isAutoSaving = false;
+                    // Esconde o indicador após 5 segundos
+                    setTimeout(function() {
+                        $saveIndicator.addClass('d-none');
+                    }, 5000);
+                }
+            });
+        }
+        
+        // Inicia o salvamento automático a cada 30 segundos
+        function startAutoSave() {
+            // Limpa o timer existente, se houver
+            if (autoSaveTimer) {
+                clearInterval(autoSaveTimer);
+            }
+            
+            // Configura o salvamento automático a cada 30 segundos
+            autoSaveTimer = setInterval(function() {
+                // Verifica se o formulário foi alterado desde a última vez
+                if ($('form.needs-validation').find('input, select, textarea').filter(function() {
+                    return $(this).val() !== $(this).data('last-value');
+                }).length > 0) {
+                    saveDraft();
+                }
+            }, 30000); // 30 segundos
+            
+            // Salva o estado inicial dos campos
+            $('form.needs-validation').find('input, select, textarea').each(function() {
+                $(this).data('last-value', $(this).val());
+            });
+        }
+        
+        // Verifica se há alterações não salvas no formulário
+        function hasUnsavedChanges() {
+            return $('form.needs-validation').find('input, select, textarea').filter(function() {
+                return $(this).val() !== $(this).data('last-value');
+            }).length > 0;
+        }
+        
+        // Configura o aviso de navegação para fora da página
+        function setupBeforeUnload() {
+            $(window).on('beforeunload', function(e) {
+                if (hasUnsavedChanges()) {
+                    // Tenta salvar automaticamente antes de sair
+                    if (!navigator.sendBeacon) {
+                        // Se o navegador não suportar sendBeacon, usa AJAX síncrono
+                        $.ajax({
+                            url: $('form.needs-validation').attr('action') || window.location.href,
+                            type: 'POST',
+                            data: new FormData($('form.needs-validation')[0]),
+                            async: false,
+                            processData: false,
+                            contentType: false,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-Save-And-Leave': 'true'
+                            }
+                        });
+                        return false;
+                    } else {
+                        // Usa sendBeacon para enviar os dados mesmo após a navegação
+                        var formData = new FormData($('form.needs-validation')[0]);
+                        formData.append('is_draft', 'true');
+                        navigator.sendBeacon(
+                            $('form.needs-validation').attr('action') || window.location.href,
+                            formData
+                        );
+                    }
+                    
+                    // Mensagem padrão para a maioria dos navegadores
+                    var confirmationMessage = 'Suas alterações foram salvas como rascunho.';
+                    
+                    // Para navegadores mais antigos
+                    (e || window.event).returnValue = confirmationMessage;
+                    
+                    // Para navegadores modernos
+                    return confirmationMessage;
+                }
+            });
+            
+            // Remove o evento quando o formulário for enviado com sucesso
+            $('form.needs-validation').on('submit', function() {
+                $(window).off('beforeunload');
+            });
+        }
+        
+        // Função para restaurar o último rascunho salvo
+        function restoreDraft() {
+            var draftKey = 'contract_draft_' + window.location.pathname.split('/').filter(Boolean).pop() || 'new';
+            var draftData = localStorage.getItem(draftKey);
+            
+            if (draftData) {
+                try {
+                    var draft = JSON.parse(draftData);
+                    var $form = $('form.needs-validation');
+                    
+                    // Preenche os campos do formulário com os dados do rascunho
+                    Object.keys(draft).forEach(function(fieldName) {
+                        var $field = $form.find('[name="' + fieldName + '"]');
+                        
+                        if ($field.length) {
+                            if ($field.is(':checkbox')) {
+                                $field.prop('checked', draft[fieldName]);
+                            } else if ($field.is('select[multiple]')) {
+                                $field.val(draft[fieldName] || []);
+                            } else if ($field.is('input[type="file"]')) {
+                                // Não tenta restaurar arquivos
+                                return;
+                            } else {
+                                $field.val(draft[fieldName]);
+                            }
+                            
+                            // Dispara eventos de mudança para campos dependentes
+                            $field.trigger('change');
+                        }
+                    });
+                    
+                    // Mostra notificação de rascunho restaurado
+                    var $alert = $('<div class="alert alert-info alert-dismissible fade show" role="alert">' +
+                                '<i class="bi bi-info-circle me-2"></i> Seu rascunho anterior foi restaurado.' +
+                                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>' +
+                                '</div>');
+                    
+                    $('h2').after($alert);
+                    
+                    // Remove o alerta após 5 segundos
+                    setTimeout(function() {
+                        $alert.alert('close');
+                    }, 5000);
+                    
+                } catch (e) {
+                    console.error('Erro ao restaurar rascunho:', e);
+                    localStorage.removeItem(draftKey);
+                }
+            }
+        }
+        
+        // Salva o estado atual do formulário como rascunho
+        function saveFormDraft() {
+            if (isAutoSaving) return;
+            
+            var formData = {};
+            $('form.needs-validation').find('input, select, textarea').each(function() {
+                var $field = $(this);
+                var name = $field.attr('name');
+                
+                if (name && !$field.is('input[type="file"]')) {
+                    if ($field.is(':checkbox')) {
+                        formData[name] = $field.is(':checked');
+                    } else if ($field.is('select[multiple]')) {
+                        formData[name] = $field.val() || [];
+                    } else {
+                        formData[name] = $field.val();
+                    }
+                }
+            });
+            
+            var draftKey = 'contract_draft_' + window.location.pathname.split('/').filter(Boolean).pop() || 'new';
+            localStorage.setItem(draftKey, JSON.stringify(formData));
+        }
+        
+        // Inicia o salvamento automático quando a página carregar
+        $(document).ready(function() {
+            // Restaura o rascunho salvo, se houver
+            if (!window.performance || !window.performance.navigation || window.performance.navigation.type !== 1) {
+                restoreDraft();
+            }
+            
+            startAutoSave();
+            setupBeforeUnload();
+            
+            // Atualiza o estado dos campos quando alterados
+            $('form.needs-validation').on('change input', 'input, select, textarea', function() {
+                $(this).data('last-value', $(this).val());
+                saveFormDraft(); // Salva o rascunho a cada alteração
+            });
+            
+            // Configura os links para verificar alterações não salvas
+            $('a:not([href^="#"])').not('[data-no-confirm]').on('click', function(e) {
+                if (hasUnsavedChanges()) {
+                    e.preventDefault();
+                    var targetUrl = $(this).attr('href');
+                    
+                    // Mostra um modal de confirmação
+                    $('#unsavedChangesModal').modal('show');
+                    
+                    // Configura o botão de confirmação
+                    $('#confirmLeaveBtn').off('click').on('click', function() {
+                        window.location.href = targetUrl;
+                    });
+                }
+            });
+        });
+        
+        // Função para limpar os rascunhos salvos
+        function clearSavedDrafts() {
+            // Remove todos os rascunhos de contratos
+            Object.keys(localStorage).forEach(function(key) {
+                if (key.startsWith('contract_draft_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+        
+        // Configura a submissão do formulário via AJAX
+        $('form.needs-validation').on('submit', function(e) {
+            e.preventDefault();
+            var $form = $(this);
+            
+            // Limpa os rascunhos salvos
+            clearSavedDrafts();
+            
+            // Valida o formulário antes de enviar
+            if (!validateForm($form)) {
+                // Rola até o primeiro campo inválido
+                $('html, body').animate({
+                    scrollTop: $('.is-invalid').first().offset().top - 100
+                }, 500);
+                return false;
+            }
+            var $submitBtn = $('button[type="submit"]', $form);
+            var originalText = $submitBtn.html();
+            var formData = new FormData($form[0]);
+            
+            // Valida campos obrigatórios antes de enviar
+            var isValid = true;
+            $form.find('[required]').each(function() {
+                if (!$(this).val()) {
+                    var $field = $(this);
+                    var $formGroup = $field.closest('.form-group, .mb-3');
+                    $field.addClass('is-invalid');
+                    if ($formGroup.find('.invalid-feedback').length === 0) {
+                        $formGroup.append('<div class="invalid-feedback">Este campo é obrigatório.</div>');
+                    }
+                    isValid = false;
+                    
+                    // Rola até o primeiro campo inválido
+                    if (isValid === false) {
+                        $('html, body').animate({
+                            scrollTop: $field.offset().top - 100
+                        }, 500);
+                        return false; // Sai do loop each
+                    }
+                }
+            });
+            
+            if (!isValid) {
+                showAlert('Por favor, preencha todos os campos obrigatórios.', 'warning');
+                return false;
+            }
+            
+            // Mostra indicador de carregamento
+            $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...');
+            
+            // Adiciona o token CSRF manualmente se necessário
+            var csrfToken = $('input[name=csrfmiddlewaretoken]').val();
+            if (csrfToken) {
+                formData.append('csrfmiddlewaretoken', csrfToken);
+            }
+            
+            // Envia o formulário via AJAX
+            $.ajax({
+                url: $form.attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                cache: false,
+                timeout: 30000, // 30 segundos de timeout
+                success: function(response) {
+                    if (response.success) {
+                        // Limpa os rascunhos salvos
+                        clearSavedDrafts();
+                        
+                        // Exibe mensagem de sucesso
+                        showAlert('success', response.message || 'Contrato salvo com sucesso!');
+                        
+                        // Redireciona após 1,5 segundos
+                        setTimeout(function() {
+                            window.location.href = response.redirect || '{% url "contracts:contract_list" %}';
+                        }, 1500);
+                    } else if (response.html) {
+                        // Atualiza o formulário com os dados retornados
+                        $form.html($(response.html).find('form').html());
+                        // Reaplica os datepickers
+                        $('.dateinput').datepicker('destroy').datepicker({
+                            dateFormat: 'dd/mm/yy',
+                            dayNames: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'],
+                            dayNamesMin: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S', 'D'],
+                            dayNamesShort: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                            monthNames: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+                            monthNamesShort: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                            nextText: 'Próximo',
+                            prevText: 'Anterior',
+                            closeText: 'Fechar',
+                            currentText: 'Hoje',
+                            changeMonth: true,
+                            changeYear: true,
+                            yearRange: 'c-100:c+10',
+                            showButtonPanel: true,
+                            showAnim: 'fadeIn',
+                            showOtherMonths: true,
+                            selectOtherMonths: true,
+                            showOn: 'both',
+                            buttonImageOnly: true,
+                            buttonImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNhbGVuZGFyIj48cGF0aCBkPSJNOCAydjQiLz48cGF0aCBkPSJNMTYgMnY0Ii8+PHJlY3Qgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiB4PSIzIiB5PSI0IiByeD0iMiIvPjxwYXRoIGQ9Ik0zIDEwaDE4Ii8+PC9zdmc+',
+                            buttonText: 'Selecionar data',
+                            beforeShow: function(input, inst) {
+                                setTimeout(function() {
+                                    inst.dpDiv.css({
+                                        'z-index': 1060 // Garante que o datepicker fique acima dos modais do Bootstrap
+                                    });
+                                }, 0);
+                            }
+                        });
+                        
+                        // Reaplica os selects estilizados
+                        if ($.fn.select2) {
+                            $('select').select2({
+                                theme: 'bootstrap-5',
+                                width: '100%',
+                                placeholder: 'Selecione uma opção',
+                                allowClear: true,
+                                dropdownParent: $('body')
+                            });
+                        }
+                        
+                        // Exibe mensagem de sucesso
+                        showAlert('Formulário salvo com sucesso!', 'success');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = 'Ocorreu um erro ao processar a solicitação.';
+                    
+                    if (xhr.status === 0) {
+                        errorMessage = 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet.';
+                    } else if (xhr.status === 400) {
+                        // Erros de validação
+                        try {
+                            var response = xhr.responseJSON;
+                            if (response && response.errors) {
+                                showValidationErrors($form, response.errors);
+                                return;
+                            }
+                        } catch (e) {
+                            console.error('Erro ao processar resposta de validação:', e);
+                        }
+                    } else if (xhr.status === 403) {
+                        errorMessage = 'Você não tem permissão para realizar esta ação.';
+                    } else if (xhr.status === 404) {
+                        errorMessage = 'Recurso não encontrado.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Ocorreu um erro no servidor. Por favor, tente novamente mais tarde.';
+                    } else if (status === 'timeout') {
+                        errorMessage = 'O servidor demorou muito para responder. Por favor, tente novamente.';
+                    }
+                    
+                    // Exibe mensagem de erro
+                    showAlert(errorMessage, 'danger');
+                    console.error('Erro na requisição:', status, error, xhr);
+                },
+                complete: function() {
+                    // Restaura o botão de envio
+                    $submitBtn.prop('disabled', false).html(originalText);
+                    
+                    // Foca no primeiro campo com erro
+                    var $firstError = $form.find('.is-invalid').first();
+                    if ($firstError.length) {
+                        $('html, body').animate({
+                            scrollTop: $firstError.offset().top - 100
+                        }, 500);
+                        $firstError.focus();
+                    }
+                }
+            });
+        });
+        
+        // Função para formatar matrícula fiscal (apenas números, máximo 7 dígitos)
+        function formatFiscalRegistration(input) {
+            var value = input.val().replace(/\D/g, ''); // Remove tudo que não for dígito
+            value = value.substring(0, 7); // Limita a 7 dígitos
+            input.val(value);
+            return value;
+        }
+        
+        // Aplica a formatação aos campos de matrícula fiscal ao digitar
+        $('input[name="fiscal_registration"], input[name="alternate_fiscal_registration"]').on('input', function() {
+            formatFiscalRegistration($(this));
+        });
+        
+        // Aplica máscara de CPF/CNPJ para campos de documento
+        $('input.document').on('input', function() {
+            formatDocument($(this));
+        });
+        
+        // Aplica máscara de telefone
+        $('input[type="tel"]').on('input', function() {
+            formatPhone($(this));
+        });
+        
+        // Configura os campos de upload de arquivo
+        $('.file-upload-container input[type="file"]').each(function() {
+            var $fileInput = $(this);
+            var $formGroup = $fileInput.closest('.form-group, .mb-3');
+            
+            // Adiciona container para o preview
+            if ($formGroup.find('.file-preview').length === 0) {
+                $fileInput.after('<div class="file-preview mt-2"></div>');
+            }
+            
+            // Adiciona botão de limpar
+            if ($formGroup.find('.btn-clear-file').length === 0) {
+                var $clearBtn = $('<button type="button" class="btn btn-sm btn-outline-danger btn-clear-file ms-2" title="Remover arquivo" style="display: none;">' +
+                               '<i class="bi bi-x-lg"></i> Remover' +
+                               '</button>');
+                $fileInput.after($clearBtn);
+                
+                // Configura o botão de limpar
+                $clearBtn.on('click', function() {
+                    $fileInput.val('');
+                    $formGroup.find('.file-preview').empty();
+                    $(this).hide();
+                    $fileInput.trigger('change');
+                });
+            }
+        }).on('change', function() {
+            handleFileUpload($(this));
+            
+            // Mostra/oculta o botão de limpar
+            var $clearBtn = $(this).siblings('.btn-clear-file');
+            if (this.files && this.files.length > 0) {
+                $clearBtn.show();
+            } else {
+                $clearBtn.hide();
+            }
+        });
+        
+        // Melhora a acessibilidade dos campos de arquivo
+        $('.file-upload-container').each(function() {
+            var $label = $(this).find('label');
+            var $input = $(this).find('input[type="file"]');
+            
+            if ($label.length && $input.length) {
+                $input.attr('aria-labelledby', $label.attr('id') || '');
+            }
+        });
+        
+        // Função para lidar com o upload de arquivos
+        function handleFileUpload($fileInput) {
+            var file = $fileInput[0].files[0];
+            var $formGroup = $fileInput.closest('.form-group, .mb-3');
+            var $previewContainer = $formGroup.find('.file-preview');
+            var $errorContainer = $formGroup.find('.invalid-feedback');
+            var $clearBtn = $formGroup.find('.btn-clear-file');
+            
+            // Limpa mensagens de erro e previews anteriores
+            $errorContainer.remove();
+            $previewContainer.empty();
+            $fileInput.removeClass('is-invalid');
+            
+            // Se não houver arquivo selecionado, não faz nada
+            if (!file) {
+                $clearBtn.hide();
+                return;
+            }
+            
+            // Atualiza o texto do botão de limpar para incluir o nome do arquivo
+            $clearBtn.attr('title', 'Remover ' + file.name);
+            
+            // Valida o tipo do arquivo (aceita PDF, DOC, DOCX, JPG, PNG)
+            var validTypes = ['application/pdf', 'application/msword', 
+                             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                             'image/jpeg', 'image/png'];
+            
+            if (validTypes.indexOf(file.type) === -1) {
+                showFileError($fileInput, 'Tipo de arquivo não suportado. Por favor, envie um arquivo PDF, DOC, DOCX, JPG ou PNG.');
+                return;
+            }
+            
+            // Valida o tamanho do arquivo (máximo 5MB)
+            var maxSize = 5 * 1024 * 1024; // 5MB em bytes
+            if (file.size > maxSize) {
+                showFileError($fileInput, 'O arquivo é muito grande. O tamanho máximo permitido é 5MB.');
+                return;
+            }
+            
+            // Cria o preview do arquivo
+            createFilePreview(file, $previewContainer, $fileInput);
+        }
+        
+        // Função para exibir mensagem de erro no campo de arquivo
+        function showFileError($fileInput, message) {
+            $fileInput.addClass('is-invalid');
+            $fileInput.after('<div class="invalid-feedback">' + message + '</div>');
+            $fileInput.val(''); // Limpa o input
+        }
+        
+        // Função para criar preview do arquivo
+        function createFilePreview(file, $container, $fileInput) {
+            var $formGroup = $fileInput.closest('.form-group, .mb-3');
+            var $clearBtn = $formGroup.find('.btn-clear-file');
+            
+            // Atualiza o texto do botão de limpar
+            $clearBtn.attr('title', 'Remover ' + file.name);
+            var reader = new FileReader();
+            
+            reader.onload = function(e) {
+                var previewHtml = '';
+                
+                if (file.type.startsWith('image/')) {
+                    // Preview para imagens
+                    previewHtml = '<div class="mt-2">' +
+                        '<img src="' + e.target.result + '" class="img-thumbnail" style="max-height: 200px;">' +
+                        '<p class="small text-muted mt-2 mb-0">' + file.name + ' (' + formatFileSize(file.size) + ')</p>' +
+                        '</div>';
+                } else {
+                    // Ícone para documentos
+                    var iconClass = 'bi-file-earmark';
+                    if (file.type.includes('pdf')) {
+                        iconClass = 'bi-file-earmark-pdf text-danger';
+                    } else if (file.type.includes('word')) {
+                        iconClass = 'bi-file-earmark-word text-primary';
+                    }
+                    
+                    previewHtml = '<div class="mt-2 text-center">' +
+                        '<i class="bi ' + iconClass + ' display-4 d-block"></i>' +
+                        '<p class="small text-muted mt-2 mb-0">' + file.name + ' (' + formatFileSize(file.size) + ')</p>' +
+                        '</div>';
+                }
+                
+                $container.html(previewHtml);
+            };
+            
+            if (file) {
+                if (file.type.startsWith('image/')) {
+                    reader.readAsDataURL(file);
+                } else {
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+        
+        // Função para formatar o tamanho do arquivo
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Aplica máscara de CEP
+        $('input[name$="_postal_code"]').on('input', function() {
+            formatPostalCode($(this));
+            
+            // Busca o endereço quando o CEP tiver 9 caracteres (incluindo o hífen)
+            if ($(this).val().replace(/\D/g, '').length === 8) {
+                searchAddressByCep($(this));
+            }
+        });
+        
+        // Função para buscar endereço pelo CEP usando a API ViaCEP
+        function searchAddressByCep($cepField) {
+            var cep = $cepField.val().replace(/\D/g, '');
+            
+            // Verifica se o CEP tem 8 dígitos
+            if (cep.length !== 8) {
+                return;
+            }
+            
+            // Desabilita os campos de endereço enquanto carrega
+            var $formGroup = $cepField.closest('.form-group, .mb-3');
+            var $addressFields = $formGroup.nextUntil(':not(.form-group, .mb-3)').addBack();
+            var $loadingIndicator = $('<div class="spinner-border spinner-border-sm ms-2" role="status"><span class="visually-hidden">Carregando...</span></div>');
+            
+            $cepField.after($loadingIndicator);
+            $addressFields.find('input, select').prop('disabled', true);
+            
+            // Faz a requisição para a API ViaCEP
+            $.getJSON('https://viacep.com.br/ws/' + cep + '/json/')
+                .done(function(data) {
+                    if (!data.erro) {
+                        // Preenche os campos com os dados retornados
+                        $formGroup.find('input[name$="_street"]').val(data.logradouro).trigger('change');
+                        $formGroup.find('input[name$="_neighborhood"]').val(data.bairro).trigger('change');
+                        $formGroup.find('input[name$="_city"]').val(data.localidade).trigger('change');
+                        $formGroup.find('select[name$="_state"]').val(data.uf).trigger('change');
+                        
+                        // Foca no campo de número
+                        $formGroup.find('input[name$="_number"]').focus();
+                        
+                        showAlert('Endereço preenchido automaticamente. Verifique os dados e faça os ajustes necessários.', 'info');
+                    } else {
+                        showAlert('CEP não encontrado. Por favor, preencha o endereço manualmente.', 'warning');
+                    }
+                })
+                .fail(function() {
+                    showAlert('Não foi possível buscar o endereço. Por favor, preencha os dados manualmente.', 'warning');
+                })
+                .always(function() {
+                    $loadingIndicator.remove();
+                    $addressFields.find('input, select').prop('disabled', false);
+                });
+        }
+        
+        // Função para formatar telefone
+        function formatPhone(input) {
+            var value = input.val().replace(/\D/g, '');
+            
+            // Limita o tamanho máximo
+            if (value.length > 11) {
+                value = value.substring(0, 11);
+            }
+            
+            // Formata como (00) 0000-0000 ou (00) 00000-0000
+            if (value.length > 0) {
+                value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                if (value.length > 10) {
+                    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+                } else {
+                    value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                }
+            }
+            
+            input.val(value);
+            return value;
+        }
+        
+        // Função para formatar CEP
+        function formatPostalCode(input) {
+            var value = input.val().replace(/\D/g, '');
+            
+            // Limita o tamanho máximo
+            if (value.length > 8) {
+                value = value.substring(0, 8);
+            }
+            
+            // Formata como 00000-000
+            if (value.length > 5) {
+                value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+            }
+            
+            input.val(value);
+            return value;
+        }
+        
+        // Função para formatar CPF/CNPJ
+        function formatDocument(input) {
+            var value = input.val().replace(/\D/g, '');
+            
+            // Limita o tamanho máximo
+            if (value.length > 14) {
+                value = value.substring(0, 14);
+            }
+            
+            // Formata como CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00)
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            } else {
+                value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+            }
+            
+            input.val(value);
+            return value;
+        }
+        
+        // Aplica máscara de valor monetário
+        $('input[name="value"]').on('input', function() {
+            formatCurrency($(this));
+        });
+        
+        // Função para formatar valor monetário
+        function formatCurrency(input) {
+            // Remove tudo que não for número ou vírgula
+            var value = input.val().replace(/[^\d,]/g, '');
+            
+            // Garante que há apenas uma vírgula
+            var parts = value.split(',');
+            if (parts.length > 2) {
+                value = parts[0] + ',' + parts.slice(1).join('');
+            }
+            
+            // Formata como moeda (ex: 1.234,56)
+            value = value.replace(/\./g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            
+            input.val(value);
+            return value;
+        }
+        
+        // Valida se o número do contrato já existe
+        function checkContractNumber(number, currentId) {
+            if (!number) return Promise.resolve(true);
+            
+            return new Promise((resolve) => {
+                $.ajax({
+                    url: '{% url "contracts:check_contract_number" %}',
+                    type: 'GET',
+                    data: {
+                        'number': number,
+                        'current_id': currentId || ''
+                    },
+                    success: function(response) {
+                        resolve(response.available);
+                    },
+                    error: function() {
+                        // Em caso de erro, assume que está disponível para não bloquear o usuário
+                        resolve(true);
+                    }
+                });
+            });
+        }
+        
+        // Validação em tempo real
+        $('form.needs-validation input, form.needs-validation select, form.needs-validation textarea').on('change input', function() {
+            var $field = $(this);
+            var fieldName = $field.attr('name');
+            var value = $field.val();
+            var isValid = true;
+            var errorMessage = '';
+            
+            // Limpa validações anteriores
+            $field.removeClass('is-invalid is-valid');
+            $field.siblings('.invalid-feedback').remove();
+            
+            // Validação de campos requeridos
+            if ($field.prop('required') && !value.trim()) {
+                isValid = false;
+                errorMessage = 'Este campo é obrigatório.';
+            }
+            
+            // Valida se o número do contrato é único
+            if (fieldName === 'contract_number' && value) {
+                var currentId = '{{ form.instance.id|default:"" }}';
+                checkContractNumber(value, currentId).then(function(isAvailable) {
+                    if (!isAvailable) {
+                        $field.addClass('is-invalid');
+                        $field.after('<div class="invalid-feedback">Este número de contrato já está em uso.</div>');
+                    }
+                });
+            }
+            
+            // Validações específicas por tipo de campo
+            if (isValid && value) {
+                // Validação de data
+                if ($field.hasClass('dateinput')) {
+                    isValid = validateDateField($field);
+                }
+                // Validação de matrícula fiscal (7 dígitos)
+                else if (fieldName === 'fiscal_registration' || fieldName === 'alternate_fiscal_registration') {
+                    if (!/^\d{7}$/.test(value)) {
+                        isValid = false;
+                        errorMessage = 'A matrícula deve conter exatamente 7 dígitos.';
+                    }
+                }
+                // Validação de CPF/CNPJ
+                else if ($field.hasClass('document')) {
+                    var cleanValue = value.replace(/[^\d]/g, '');
+                    if (cleanValue.length === 11) {
+                        // Valida CPF
+                        if (!validateCPF(cleanValue)) {
+                            isValid = false;
+                            errorMessage = 'Por favor, insira um CPF válido.';
+                        }
+                    } else if (cleanValue.length === 14) {
+                        // Valida CNPJ
+                        if (!validateCNPJ(cleanValue)) {
+                            isValid = false;
+                            errorMessage = 'Por favor, insira um CNPJ válido.';
+                        }
+                    } else if (cleanValue.length > 0) {
+                        isValid = false;
+                        errorMessage = 'Por favor, insira um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.';
+                    }
+                }
+                // Validação de e-mail
+                else if ($field.attr('type') === 'email' || fieldName.includes('email')) {
+                    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (value && !emailRegex.test(value)) {
+                        isValid = false;
+                        errorMessage = 'Por favor, insira um endereço de e-mail válido.';
+                    }
+                }
+                // Validação de URL
+                else if ($field.attr('type') === 'url' || $field.attr('name') === 'website') {
+                    try {
+                        new URL(value);
+                    } catch (e) {
+                        isValid = false;
+                        errorMessage = 'Por favor, insira uma URL válida (incluindo http:// ou https://).';
+                    }
+                }
+            }
+            
+            // Aplica estilos e mensagens de erro
+            if (isValid) {
+                $field.addClass('is-valid');
+            } else {
+                $field.addClass('is-invalid');
+                if (errorMessage) {
+                    $field.after('<div class="invalid-feedback">' + errorMessage + '</div>');
+                }
+            }
+            
+            // Validação de datas relacionadas (data final não pode ser anterior à data inicial)
+            if (fieldName === 'start_date' || fieldName === 'end_date') {
+                validateDateRange();
+            }
+            
+            return isValid;
+        });
+        
+        // Função para validar campos de data
+        function validateDateField($field) {
+            var value = $field.val().trim();
+            if (!value) return true;
+            
+            // Verifica o formato da data (dd/mm/yyyy)
+            var dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+            if (!dateRegex.test(value)) {
+                $field[0].setCustomValidity('Por favor, insira uma data válida no formato dd/mm/yyyy');
+                return false;
+            }
+            
+            // Converte para objeto Date para validação adicional
+            var parts = value.split('/');
+            var day = parseInt(parts[0], 10);
+            var month = parseInt(parts[1], 10) - 1; // Mês é base 0 no JavaScript
+            var year = parseInt(parts[2], 10);
+            
+            var date = new Date(year, month, day);
+            if (isNaN(date.getTime()) || 
+                date.getDate() !== day || 
+                date.getMonth() !== month || 
+                date.getFullYear() !== year) {
+                $field[0].setCustomValidity('Por favor, insira uma data válida');
+                return false;
+            }
+            
+            $field[0].setCustomValidity('');
+            return true;
+        }
+        
+        // Função para validar o intervalo entre datas (data final não pode ser anterior à data inicial)
+        function validateDateRange() {
+            var $startDate = $('input[name="start_date"]');
+            var $endDate = $('input[name="end_date"]');
+            
+            if (!$startDate.length || !$endDate.length) return;
+            
+            var startValue = $startDate.val();
+            var endValue = $endDate.val();
+            
+            if (!startValue || !endValue) return;
+            
+            // Converte as datas para objetos Date para comparação
+            var startParts = startValue.split('/');
+            var endParts = endValue.split('/');
+            
+            var startDate = new Date(startParts[2], startParts[1] - 1, startParts[0]);
+            var endDate = new Date(endParts[2], endParts[1] - 1, endParts[0]);
+            
+            if (endDate < startDate) {
+                $endDate[0].setCustomValidity('A data de término não pode ser anterior à data de início.');
+                $endDate.addClass('is-invalid');
+                if ($endDate.siblings('.invalid-feedback').length === 0) {
+                    $endDate.after('<div class="invalid-feedback">A data de término não pode ser anterior à data de início.</div>');
+                }
+            } else {
+                $endDate[0].setCustomValidity('');
+                $endDate.removeClass('is-invalid');
+                $endDate.siblings('.invalid-feedback').remove();
+                
+                // Se a data for válida, verifica se o campo está vazio para não adicionar a classe is-valid
+                if (endValue) {
+                    $endDate.addClass('is-valid');
+                }
+            }
+        }
+        
+        // Função para validar CPF
+        function validateCPF(cpf) {
+            cpf = cpf.replace(/[\D]/g, '');
+            
+            // Verifica se tem 11 dígitos
+            if (cpf.length !== 11) return false;
+            
+            // Verifica se todos os dígitos são iguais
+            if (/^(\d)\1+$/.test(cpf)) return false;
+            
+            // Validação do primeiro dígito verificador
+            let sum = 0;
+            for (let i = 0; i < 9; i++) {
+                sum += parseInt(cpf.charAt(i)) * (10 - i);
+            }
+            let remainder = 11 - (sum % 11);
+            let digit = remainder >= 10 ? 0 : remainder;
+            
+            if (digit !== parseInt(cpf.charAt(9))) return false;
+            
+            // Validação do segundo dígito verificador
+            sum = 0;
+            for (let i = 0; i < 10; i++) {
+                sum += parseInt(cpf.charAt(i)) * (11 - i);
+            }
+            remainder = 11 - (sum % 11);
+            digit = remainder >= 10 ? 0 : remainder;
+            
+            return digit === parseInt(cpf.charAt(10));
+        }
+        
+        // Função para validar CNPJ
+        function validateCNPJ(cnpj) {
+            cnpj = cnpj.replace(/[\D]/g, '');
+            
+            // Verifica se tem 14 dígitos
+            if (cnpj.length !== 14) return false;
+            
+            // Verifica se todos os dígitos são iguais
+            if (/^(\d)\1+$/.test(cnpj)) return false;
+            
+            // Validação do primeiro dígito verificador
+            let size = cnpj.length - 2;
+            let numbers = cnpj.substring(0, size);
+            const digits = cnpj.substring(size);
+            let sum = 0;
+            let pos = size - 7;
+            
+            for (let i = size; i >= 1; i--) {
+                sum += numbers.charAt(size - i) * pos--;
+                if (pos < 2) pos = 9;
+            }
+            
+            let result = sum % 11 < 2 ? 0 : 11 - sum % 11;
+            if (result !== parseInt(digits.charAt(0))) return false;
+            
+            // Validação do segundo dígito verificador
+            size = size + 1;
+            numbers = cnpj.substring(0, size);
+            sum = 0;
+            pos = size - 7;
+            
+            for (let i = size; i >= 1; i--) {
+                sum += numbers.charAt(size - i) * pos--;
+                if (pos < 2) pos = 9;
+            }
+            
+            result = sum % 11 < 2 ? 0 : 11 - sum % 11;
+            return result === parseInt(digits.charAt(1));
+        }
+        
+        // Remove a validação e limpa os campos de arquivo ao limpar o formulário
+        $('form').on('reset', function() {
+            // Limpa os campos de arquivo
+            $('.file-upload-container input[type="file"]').each(function() {
+                $(this).val('');
+                $(this).siblings('.file-preview').empty();
+                $(this).siblings('.btn-clear-file').hide();
+            });
+            $(this).removeClass('was-validated');
+            $('.is-invalid, .is-valid', this).removeClass('is-invalid is-valid');
+            $('.invalid-feedback, .valid-feedback', this).remove();
+            
+            // Limpa a validação personalizada dos campos de data
+            $('input.dateinput').each(function() {
+                this.setCustomValidity('');
+            });
+            
+            // Limpa a formatação dos campos de matrícula fiscal
+            $('input[name="fiscal_registration"], input[name="alternate_fiscal_registration"]').val('');
+            
+            // Limpa a formatação do campo de valor
+            $('input[name="value"]').val('');
+            
+            // Limpa a formatação dos campos de documento
+            $('input.document').val('');
+            
+            // Limpa a formatação dos campos de telefone e CEP
+            $('input[type="tel"]').val('');
+            $('input[name$="_postal_code"]').val('');
+            
+            // Habilita todos os campos de endereço
+            $('input[name$="_street"], input[name$="_number"], input[name$="_complement"], ' +
+              'input[name$="_neighborhood"], input[name$="_city"], select[name$="_state"]')
+                .val('')
+                .prop('disabled', false);
+        });
+    })();
+});
+</script>
+{% endblock %}

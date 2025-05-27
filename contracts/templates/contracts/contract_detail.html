@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{{ contract.contract_number }} - {{ contract.company }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 20px;
+    }
+    .chart-container canvas {
+        width: 100% !important;
+        height: auto !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3">
+                    <i class="fas fa-file-contract"></i> {{ contract.contract_number }} - {{ contract.company }}
+                </h1>
+                <div>
+                    <a href="{% url 'contracts:contract_update' contract.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> {% trans 'Editar' %}
+                    </a>
+                    <a href="{% url 'contracts:contract_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> {% trans 'Voltar' %}
+                    </a>
+                </div>
+            </div>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações Principais -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans 'Informações do Contrato' %}</h5>
+                    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#contractInfo" aria-expanded="true" aria-controls="contractInfo">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="card-body collapse show" id="contractInfo">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>{% trans 'Número do Contrato' %}:</strong> {{ contract.contract_number }}</p>
+                            <p><strong>{% trans 'Empresa' %}:</strong> {{ contract.company }}</p>
+                            {% if contract.status %}
+                            <p><strong>{% trans 'Status' %}:</strong> 
+                                <span class="badge" style="background-color: {{ contract.status.color|default:'#6c757d' }}">
+                                    {{ contract.status.name }}
+                                </span>
+                            </p>
+                            {% endif %}
+                            {% if contract.created_by %}
+                            <p><strong>{% trans 'Criado por' %}:</strong> {{ contract.created_by.get_full_name|default:contract.created_by.username }}</p>
+                            {% endif %}
+                            {% if contract.created_at %}
+                            <p><strong>{% trans 'Data de Criação' %}:</strong> {{ contract.created_at|date:'d/m/Y H:i' }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if contract.fiscal_name %}
+                            <p><strong>{% trans 'Fiscal Titular' %}:</strong> {{ contract.fiscal_name }}</p>
+                            {% endif %}
+                            {% if contract.fiscal_registration %}
+                            <p><strong>{% trans 'Matrícula do Fiscal' %}:</strong> {{ contract.fiscal_registration }}</p>
+                            {% endif %}
+                            {% if contract.alternate_fiscal_name %}
+                                <p><strong>{% trans 'Fiscal Suplente' %}:</strong> {{ contract.alternate_fiscal_name }}</p>
+                                {% if contract.alternate_fiscal_registration %}
+                                <p><strong>{% trans 'Matrícula do Suplente' %}:</strong> {{ contract.alternate_fiscal_registration }}</p>
+                                {% endif %}
+                            {% endif %}
+                            {% if contract.responsible %}
+                            <p><strong>{% trans 'Responsável' %}:</strong> {{ contract.responsible.get_full_name|default:contract.responsible.username }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentos -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans 'Documentos' %}</h5>
+                    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#documentsSection" aria-expanded="true" aria-controls="documentsSection">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="card-body collapse show" id="documentsSection">
+                    <div class="list-group">
+                        {% if contract.contract_document %}
+                        <a href="{{ contract.contract_document.url }}" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-pdf text-danger"></i> {% trans 'Contrato Original' %}
+                        </a>
+                        {% endif %}
+                        {% if contract.fiscal_portaria %}
+                        <a href="{{ contract.fiscal_portaria.url }}" target="_blank" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-pdf text-danger"></i> {% trans 'Portaria de Designação do Fiscal' %}
+                        </a>
+                        {% endif %}
+                        {% if contract.additive_term %}
+                            <a href="{{ contract.additive_term.url }}" target="_blank" class="list-group-item list-group-item-action">
+                                <i class="fas fa-file-pdf text-danger"></i> {% trans 'Termo Aditivo' %}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lembretes e Histórico -->
+        <div class="col-md-4">
+            <!-- Lembretes -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <h5 class="mb-0 me-2">{% trans 'Lembretes' %}</h5>
+                            <button class="btn btn-sm btn-outline-dark" type="button" data-bs-toggle="collapse" data-bs-target="#remindersSection" aria-expanded="true" aria-controls="remindersSection">
+                                <i class="fas fa-chevron-up"></i>
+                            </button>
+                        </div>
+                        <a href="{% url 'contracts:contract_reminder_create' %}?contract={{ contract.id }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus"></i> {% trans 'Novo' %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0 collapse show" id="remindersSection">
+                    {% if reminders %}
+                        <div class="list-group list-group-flush">
+                            {% for reminder in reminders|slice:":5" %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ reminder.title }}</h6>
+                                        <small class="text-muted">{{ reminder.due_date|date:'d/m/Y' }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ reminder.description|truncatechars:50 }}</p>
+                                    <small class="text-muted">
+                                        {% if reminder.is_completed %}
+                                            <span class="text-success"><i class="fas fa-check-circle"></i> {% trans 'Concluído' %}</span>
+                                        {% else %}
+                                            <span class="text-warning"><i class="far fa-clock"></i> {% trans 'Pendente' %}</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if reminders|length > 5 %}
+                            <div class="card-footer text-center">
+                                <a href="{% url 'contracts:contract_reminder_list' %}?contract={{ contract.id }}" class="btn btn-sm btn-link">
+                                    {% trans 'Ver todos' %} ({{ reminders|length }})
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="p-3 text-center text-muted">
+                            <i class="far fa-bell-slash fa-2x mb-2"></i>
+                            <p class="mb-0">{% trans 'Nenhum lembrete encontrado' %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Histórico -->
+            <div class="card">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <h5 class="mb-0 me-2">{% trans 'Histórico de Alterações' %}</h5>
+                        <button class="btn btn-sm btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#historySection" aria-expanded="true" aria-controls="historySection">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0 collapse show" id="historySection">
+                    {% if history %}
+                        <div class="list-group list-group-flush">
+                            {% for entry in history %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ entry.change_description }}</h6>
+                                        <small class="text-muted">{{ entry.change_date|timesince }} {% trans 'atrás' %}</small>
+                                    </div>
+                                    <p class="mb-1 small">
+                                {% trans 'Por' %} 
+                                {% if entry.changed_by %}
+                                    {{ entry.changed_by.get_full_name|default:entry.changed_by.username }}
+                                {% else %}
+                                    {% trans 'Sistema' %}
+                                {% endif %}
+                            </p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="card-footer text-center">
+                            <a href="{% url 'contracts:contract_history' contract.id %}" class="btn btn-sm btn-link">
+                                {% trans 'Ver histórico completo' %}
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="p-3 text-center text-muted">
+                            <i class="far fa-clock fa-2x mb-2"></i>
+                            <p class="mb-0">{% trans 'Nenhum histórico encontrado' %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Adicione aqui qualquer JavaScript adicional necessário
+    });
+</script>
+{% endblock %}

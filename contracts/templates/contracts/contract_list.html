@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Contratos - Sistema de Gestão de Contratos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-file-earmark-text me-2"></i>Contratos
+                </h1>
+                <a href="{% url 'contracts:contract_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Novo Contrato
+                </a>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Contratos</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Número</th>
+                            <th>Contratante</th>
+                            <th>Objeto</th>
+                            <th>Valor</th>
+                            <th>Início</th>
+                            <th>Término</th>
+                            <th>Status</th>
+                            <th class="text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contract in object_list %}
+                        <tr>
+                            <td>{{ contract.contract_number }}</td>
+                            <td>{{ contract.contracting_party }}</td>
+                            <td>{{ contract.object|truncatechars:50 }}</td>
+                            <td>R$ {{ contract.value|default:'0,00' }}</td>
+                            <td>{{ contract.start_date|date:'d/m/Y' }}</td>
+                            <td>{{ contract.end_date|date:'d/m/Y' }}</td>
+                            <td>
+                                {% if contract.is_active %}
+                                <span class="badge bg-success">Ativo</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'contracts:contract_detail' contract.pk %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Visualizar">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'contracts:contract_update' contract.pk %}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'contracts:contract_delete' contract.pk %}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Nenhum contrato cadastrado.
+                                </div>
+                                <a href="{% url 'contracts:contract_create' %}" class="btn btn-primary mt-2">
+                                    <i class="bi bi-plus-lg me-1"></i> Adicionar Contrato
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+            <nav aria-label="Navegação de páginas" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-hidden="true">&laquo;</span>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Próximo">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-hidden="true">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicializa os tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

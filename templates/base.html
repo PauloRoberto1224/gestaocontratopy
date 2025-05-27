@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Gestão de Contratos{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'core:dashboard' %}">
+                <i class="bi bi-file-earmark-text"></i> Gestão de Contratos
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                {% if user.is_authenticated %}
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_menu == 'dashboard' %}active{% endif %}" 
+                           href="{% url 'core:dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_menu == 'contracts' %}active{% endif %}" 
+                           href="{% url 'contracts:contract_list' %}">
+                            <i class="bi bi-file-earmark-text"></i> Contratos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_menu == 'monitoring' %}active{% endif %}" 
+                           href="{% url 'monitoring:alerts' %}">
+                            <i class="bi bi-bell"></i> Monitoramento
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_menu == 'reports' %}active{% endif %}" 
+                           href="{% url 'reports:report_list' %}">
+                            <i class="bi bi-graph-up"></i> Relatórios
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{% url 'core:profile' %}">
+                                <i class="bi bi-person"></i> Perfil
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'core:password_change' %}">
+                                <i class="bi bi-key"></i> Alterar Senha
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'core:logout' %}">
+                                <i class="bi bi-box-arrow-right"></i> Sair
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-shrink-0">
+        <div class="container my-4">
+            <!-- Mensagens -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Título da Página -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">{% block page_title %}{% endblock %}</h1>
+                <div>{% block page_actions %}{% endblock %}</div>
+            </div>
+            
+            <!-- Conteúdo Específico -->
+            {% block content %}
+            {% endblock %}
+        </div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">
+                &copy; {% now "Y" %} Sistema de Gestão de Contratos - Todos os direitos reservados
+            </span>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle com Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- jQuery UI CSS -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <!-- jQuery UI JS -->
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <!-- jQuery UI i18n -->
+    <script src="https://code.jquery.com/ui/1.13.2/i18n/datepicker-pt-BR.js"></script>
+    
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

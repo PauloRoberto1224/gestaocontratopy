@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Relatórios - Sistema de Gestão de Contratos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">
+                <i class="bi bi-graph-up me-2"></i>Relatórios
+            </h1>
+            
+            <div class="row">
+                {% for report in reports %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary bg-opacity-10 p-3 rounded-3 me-3">
+                                    <i class="bi bi-{{ report.icon }} fs-2 text-primary"></i>
+                                </div>
+                                <h5 class="card-title mb-0">{{ report.title }}</h5>
+                            </div>
+                            <p class="card-text text-muted">{{ report.description }}</p>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0">
+                            <a href="{{ report.url }}" class="btn btn-outline-primary">
+                                <i class="bi bi-download me-1"></i> Gerar Relatório
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Relatórios Personalizados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Em breve, você poderá criar relatórios personalizados com os critérios que desejar.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
