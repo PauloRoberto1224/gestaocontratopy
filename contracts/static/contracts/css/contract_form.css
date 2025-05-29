@@ -1,0 +1,105 @@
+/* Estilos para o formulário de contrato */
+
+/* Estilo para campos obrigatórios */
+.required-field label:after {
+    content: ' *';
+    color: #dc3545;
+}
+
+/* Estilo para campos desabilitados */
+.form-control:disabled,
+.form-control[readonly] {
+    background-color: #e9ecef;
+    opacity: 1;
+}
+
+/* Estilo para mensagens de validação */
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
+}
+
+.was-validated .form-control:invalid ~ .invalid-feedback,
+.was-validated .form-control:invalid ~ .invalid-tooltip,
+.form-control.is-invalid ~ .invalid-feedback,
+.form-control.is-invalid ~ .invalid-tooltip {
+    display: block;
+}
+
+/* Estilo para o container de upload de arquivo */
+.file-upload-container {
+    margin-bottom: 1rem;
+}
+
+.file-upload-container .form-control[type="file"] {
+    padding: 0.375rem 0.75rem;
+    height: auto;
+    line-height: 1.5;
+}
+
+.file-upload-container .file-preview {
+    margin-top: 0.5rem;
+}
+
+.file-upload-container .file-preview img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+
+/* Estilo para campos monetários */
+.currency-input {
+    text-align: right;
+}
+
+/* Estilo para mensagens de ajuda */
+.form-text {
+    color: #6c757d;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+
+/* Estilo para seções do formulário */
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Ajustes para campos de data */
+.datepicker {
+    z-index: 10000 !important;
+}
+
+/* Estilo para o container de notificações */
+.notification-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1100;
+    min-width: 300px;
+}
+
+/* Estilo para botões de ação */
+.btn-action {
+    margin-right: 0.5rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .btn-action {
+        margin-bottom: 0.5rem;
+        width: 100%;
+    }
+    
+    .btn-action:not(:last-child) {
+        margin-right: 0;
+    }
+}

@@ -146,7 +146,7 @@ class ContractForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Adiciona classes CSS aos campos
         for field in self.fields:
-            if field not in ['contract_term', 'currency', 'notes']:
+            if field not in ['contract_term', 'currency', 'notes', 'contract_number']:
                 if 'class' not in self.fields[field].widget.attrs:
                     self.fields[field].widget.attrs['class'] = 'form-control'
         
@@ -159,6 +159,11 @@ class ContractForm(forms.ModelForm):
         # Define o valor padrão da moeda como BRL e esconde o campo
         self.fields['currency'].initial = 'BRL'
         self.fields['currency'].widget.attrs['value'] = 'BRL'
+        
+        # Configura o campo de número do contrato como somente leitura
+        self.fields['contract_number'].widget.attrs['readonly'] = True
+        self.fields['contract_number'].widget.attrs['class'] = 'form-control-plaintext'
+        self.fields['contract_number'].help_text = 'Número gerado automaticamente no formato CTR-YYYY-NNN'
     
     def clean_fiscal_registration(self):
         fiscal_registration = self.cleaned_data.get('fiscal_registration')

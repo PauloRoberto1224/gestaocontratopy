@@ -50,7 +50,49 @@ class ContractType(models.Model):
 class Contract(models.Model):
     """Modelo principal para contratos"""
     # Informações básicas
-    contract_number = models.CharField(_('número do contrato'), max_length=100, unique=True, default='TEMP-000')
+    contract_number = models.CharField(
+        _('número do contrato'),
+        max_length=20,
+        unique=True,
+        blank=True,
+        help_text=_('Número do contrato no formato CTR-YYYY-NNN')
+    )
+    
+    @classmethod
+    def get_next_contract_number(cls):
+        """Gera o próximo número de contrato no formato CTR-YYYY-NNN"""
+        from django.db.models import Max
+        from django.utils import timezone
+        
+        current_year = timezone.now().year
+        
+        # Busca o maior número de sequência para o ano atual
+        last_contract = cls.objects.filter(
+            contract_number__startswith=f'CTR-{current_year}-'
+        ).order_by('-contract_number').first()
+        
+        if last_contract:
+            try:
+                # Extrai o número de sequência e incrementa
+                last_number = int(last_contract.contract_number.split('-')[-1])
+                next_number = last_number + 1
+            except (IndexError, ValueError):
+                next_number = 1
+        else:
+            next_number = 1
+            
+        return f'CTR-{current_year}-{next_number:03d}'
+    
+    def save(self, *args, **kwargs):
+        # Gera o número do contrato se não existir
+        if not self.contract_number:
+            self.contract_number = self.get_next_contract_number()
+        
+        # Garante que o número do contrato está no formato correto
+        if not self.contract_number.startswith('CTR-'):
+            self.contract_number = self.get_next_contract_number()
+            
+        super().save(*args, **kwargs)
     title = models.CharField(_('título'), max_length=200, null=True, blank=True, help_text=_('Título do contrato (obsoleto, usar campo empresa)'))
     company = models.CharField(_('empresa'), max_length=200, default='Empresa não informada')
     fiscal_name = models.CharField(_('nome fiscal'), max_length=200, default='Fiscal não informado')

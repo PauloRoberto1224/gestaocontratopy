@@ -167,7 +167,7 @@ SITE_NAME = 'Sistema de Gestão de Contratos'
 SITE_DOMAIN = os.getenv('SITE_DOMAIN', 'localhost:8000')
 
 # File upload settings
-MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
+MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB
 ALLOWED_FILE_TYPES = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png']
 
 # Logging configuration

@@ -336,91 +336,41 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Inclui o arquivo JavaScript principal -->
+<script src="{% static 'contracts/js/contract_form.js' %}"></script>
+
 <!-- Inicialização do formulário -->
 <script>
-// Define as funções no escopo global
-window.formatCurrencyOnBlur = function(input) {
-    // Remove todos os caracteres não numéricos
-    let value = input.value.replace(/[^\d,]/g, '');
-    
-    // Se não tiver vírgula, adiciona ,00
-    if (value.indexOf(',') === -1 && value.length > 0) {
-        value += ',00';
-    }
-    
-    // Formata com pontos para milhares e mantém 2 casas decimais
-    const parts = value.split(',');
-    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    const decPart = parts[1] ? parts[1].substring(0, 2) : '00';
-    
-    // Atualiza o valor formatado
-    input.value = intPart + (parts.length > 1 ? ',' + decPart : '');
-};
-
-window.formatFiscalRegistration = function(input) {
-    // Remove todos os caracteres não numéricos
-    let value = $(input).val().replace(/[^\d]/g, '');
-    
-    // Formata CPF: 000.000.000-00
-    if (value.length <= 11) {
-        value = value.replace(/(\d{3})(\d)/, "$1.$2");
-        value = value.replace(/(\d{3})(\d)/, "$1.$2");
-        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    } 
-    // Formata CNPJ: 00.000.000/0000-00
-    else {
-        value = value.replace(/^(\d{2})(\d)/, "$1.$2");
-        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
-        value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
-        value = value.replace(/(\d{4})(\d)/, "$1-$2");
-    }
-    
-    // Atualiza o valor formatado
-    $(input).val(value);
-};
-
 $(document).ready(function() {
-    // Carrega o script principal
-    const scriptUrl = '{% static "contracts/js/contract_form.js" %}';
-    console.log('Carregando script de:', scriptUrl);
-    $.getScript(scriptUrl)
-        .done(function() {
-            console.log('Script carregado com sucesso!');
-            // Inicializa o formulário após o carregamento do script
-            if (typeof initializeForm === 'function') {
-                initializeForm();
-            }
+    // Inicializa o formulário e configura os eventos
+    initializeForm();
+    
+    // Configura o evento para mostrar confirmação ao sair da página com alterações não salvas
+    let formChanged = false;
+    $('form#contractForm :input').on('change input', function() {
+        formChanged = true;
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = 'Você tem alterações não salvas. Tem certeza que deseja sair?';
+        }
+    });
+    
+    // Confirmação ao sair da página
+    $('a:not([formnovalidate]):not([href^="#"])').on('click', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            const leaveUrl = $(this).attr('href');
             
-            // Configura o evento para mostrar confirmação ao sair da página com alterações não salvas
-            let formChanged = false;
-            $('form#contractForm :input').on('change input', function() {
-                formChanged = true;
+            $('#unsavedChangesModal').modal('show');
+            $('#confirmLeaveBtn').off('click').on('click', function() {
+                formChanged = false;
+                window.location.href = leaveUrl;
             });
-            
-            window.addEventListener('beforeunload', function(e) {
-                if (formChanged) {
-                    e.preventDefault();
-                    e.returnValue = 'Você tem alterações não salvas. Tem certeza que deseja sair?';
-                }
-            });
-            
-            // Confirmação ao sair da página
-            $('a:not([formnovalidate]):not([href^="#"])').on('click', function(e) {
-                if (formChanged) {
-                    e.preventDefault();
-                    const leaveUrl = $(this).attr('href');
-                    
-                    $('#unsavedChangesModal').modal('show');
-                    $('#confirmLeaveBtn').off('click').on('click', function() {
-                        formChanged = false;
-                        window.location.href = leaveUrl;
-                    });
-                }
-            });
-        })
-        .fail(function() {
-            console.error('Falha ao carregar o script do formulário');
-        });
+        }
+    });
 });
 </script>
 {% endblock %}

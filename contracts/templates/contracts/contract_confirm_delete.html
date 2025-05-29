@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão - {{ object.contract_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Confirmar Exclusão
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Tem certeza que deseja excluir o contrato abaixo?</p>
+                    
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">Contrato: {{ object.contract_number }}</h6>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>Empresa:</strong> {{ object.company }}<br>
+                            <strong>Fiscal:</strong> {{ object.fiscal_name }}<br>
+                            <strong>Início:</strong> {{ object.start_date|date:"d/m/Y" }} | 
+                            <strong>Término:</strong> {{ object.end_date|date:"d/m/Y" }}
+                        </p>
+                    </div>
+
+                    <p class="text-danger">
+                        <i class="bi bi-exclamation-circle-fill"></i> 
+                        Atenção: Esta ação não pode ser desfeita. Todos os dados relacionados a este contrato serão removidos permanentemente.
+                    </p>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ object.get_absolute_url }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i> Sim, excluir contrato
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

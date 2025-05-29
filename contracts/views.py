@@ -219,27 +219,52 @@ class ContractCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         return reverse_lazy('contracts:contract_detail', kwargs={'pk': self.object.pk})
     
     def form_valid(self, form):
+        # Processa o valor monetário antes de salvar
+        if 'value' in form.cleaned_data and form.cleaned_data['value']:
+            try:
+                # Remove formatação do valor (R$, pontos e troca vírgula por ponto)
+                value = form.cleaned_data['value']
+                if isinstance(value, str):
+                    value = value.replace('R$', '').replace('.', '').replace(',', '.').strip()
+                    form.cleaned_data['value'] = value
+            except (ValueError, AttributeError):
+                pass
+        
         form.instance.created_by = self.request.user
-        response = super().form_valid(form)
         
-        # Registrar histórico
-        ContractHistory.objects.create(
-            contract=self.object,
-            changed_by=self.request.user,
-            change_description=_('Contrato criado'),
-            changed_fields={'created': True}
-        )
-        
-        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            data = {
-                'success': True,
-                'redirect': self.get_success_url(),
-                'message': _('Contrato criado com sucesso!')
-            }
-            return JsonResponse(data)
-        
-        messages.success(self.request, _('Contrato criado com sucesso!'))
-        return response
+        try:
+            response = super().form_valid(form)
+            
+            # Registrar histórico
+            ContractHistory.objects.create(
+                contract=self.object,
+                changed_by=self.request.user,
+                change_description=_('Contrato criado'),
+                changed_fields={'created': True}
+            )
+            
+            is_ajax = self.request.POST.get('is_ajax') == '1' or self.request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            
+            if is_ajax:
+                data = {
+                    'success': True,
+                    'redirect': self.get_success_url(),
+                    'message': _('Contrato criado com sucesso!'),
+                    'contract_id': self.object.id
+                }
+                return JsonResponse(data)
+            
+            messages.success(self.request, _('Contrato criado com sucesso!'))
+            return response
+            
+        except Exception as e:
+            if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': str(e),
+                    'errors': {'__all__': [str(e)]}
+                }, status=400)
+            raise
     
     def form_invalid(self, form):
         if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
