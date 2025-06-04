@@ -95,6 +95,12 @@ class Contract(models.Model):
         super().save(*args, **kwargs)
     title = models.CharField(_('título'), max_length=200, null=True, blank=True, help_text=_('Título do contrato (obsoleto, usar campo empresa)'))
     company = models.CharField(_('empresa'), max_length=200, default='Empresa não informada')
+    company_cnpj = models.CharField(
+        _('CNPJ da empresa'), 
+        max_length=18, 
+        blank=True,
+        help_text=_('CNPJ no formato 00.000.000/0000-00')
+    )
     fiscal_name = models.CharField(_('nome fiscal'), max_length=200, default='Fiscal não informado')
     fiscal_registration = models.CharField(_('matrícula do fiscal'), max_length=7, 
                                          help_text=_('Matrícula com 7 dígitos'), default='0000000')

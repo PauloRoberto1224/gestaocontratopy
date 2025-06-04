@@ -78,13 +78,228 @@
     z-index: 10000 !important;
 }
 
-/* Estilo para o container de notificações */
-.notification-container {
+/* ==================================================
+   ESTILOS PARA NOTIFICAÇÕES E ALERTAS
+   ================================================== */
+
+/* Container principal de notificações */
+.notifications-container {
     position: fixed;
-    top: 1rem;
-    right: 1rem;
     z-index: 1100;
-    min-width: 300px;
+    max-width: 400px;
+    width: 90%;
+    pointer-events: none;
+}
+
+/* Posicionamento dos containers de notificação */
+.notifications-top-right {
+    top: 20px;
+    right: 20px;
+    bottom: auto;
+    left: auto;
+}
+
+.notifications-top-left {
+    top: 20px;
+    left: 20px;
+    right: auto;
+    bottom: auto;
+}
+
+.notifications-bottom-right {
+    bottom: 20px;
+    right: 20px;
+    top: auto;
+    left: auto;
+}
+
+.notifications-bottom-left {
+    bottom: 20px;
+    left: 20px;
+    top: auto;
+    right: auto;
+}
+
+.notifications-top-center {
+    top: 20px;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    transform: translateX(-50%);
+}
+
+.notifications-bottom-center {
+    bottom: 20px;
+    left: 50%;
+    right: auto;
+    top: auto;
+    transform: translateX(-50%);
+}
+
+/* Estilo base para os alertas */
+.alert {
+    position: relative;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: auto;
+    max-height: 500px;
+    overflow: hidden;
+}
+
+/* Mostra o alerta quando adicionado */
+.alert.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Conteúdo do alerta */
+.alert .alert-content {
+    display: flex;
+    align-items: flex-start;
+}
+
+/* Mensagem do alerta */
+.alert .alert-message {
+    flex: 1;
+    min-width: 0;
+}
+
+.alert .alert-title {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.alert .alert-text {
+    display: block;
+    word-wrap: break-word;
+}
+
+/* Ícones nos alertas */
+.alert i.fas {
+    font-size: 1.25rem;
+    margin-top: 0.125rem;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Botão de fechar */
+.alert .btn-close {
+    margin-left: 0.75rem;
+    padding: 0.5rem;
+    background-size: 0.75em;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.alert .btn-close:hover {
+    opacity: 1;
+}
+
+/* Animações */
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInLeft {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Aplica animações baseadas na posição */
+.alert.alert-top-right {
+    animation: slideInRight 0.3s ease forwards;
+}
+
+.alert.alert-top-left {
+    animation: slideInLeft 0.3s ease forwards;
+}
+
+.alert.alert-bottom-right {
+    animation: slideInRight 0.3s ease forwards;
+}
+
+.alert.alert-bottom-left {
+    animation: slideInLeft 0.3s ease forwards;
+}
+
+.alert.alert-top-center {
+    animation: slideInDown 0.3s ease forwards;
+}
+
+.alert.alert-bottom-center {
+    animation: slideInUp 0.3s ease forwards;
+}
+
+/* Responsividade */
+@media (max-width: 576px) {
+    .notifications-container {
+        width: calc(100% - 40px);
+        max-width: none;
+    }
+    
+    .alert {
+        padding: 0.75rem 1rem;
+    }
+    
+    .alert i.fas {
+        font-size: 1.1rem;
+        margin-right: 0.5rem;
+    }
+}
+
+/* Estilos específicos para tipos de alerta */
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.alert-primary {
+    background-color: #cce5ff;
+    border-color: #b8daff;
+    color: #004085;
+}
+
+.alert-secondary {
+    background-color: #e2e3e5;
+    border-color: #d6d8db;
+    color: #383d41;
 }
 
 /* Estilo para botões de ação */

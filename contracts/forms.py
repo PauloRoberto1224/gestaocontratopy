@@ -118,7 +118,7 @@ class ContractForm(forms.ModelForm):
     class Meta:
         model = Contract
         fields = [
-            'contract_number', 'company', 'fiscal_name', 'fiscal_registration',
+            'contract_number', 'company', 'company_cnpj', 'fiscal_name', 'fiscal_registration',
             'alternate_fiscal_name', 'alternate_fiscal_registration',
             'contract_term', 'start_date', 'end_date', 'value', 'currency',
             'contract_document', 'fiscal_portaria', 'additive_term', 'notes'
@@ -150,11 +150,27 @@ class ContractForm(forms.ModelForm):
                 if 'class' not in self.fields[field].widget.attrs:
                     self.fields[field].widget.attrs['class'] = 'form-control'
         
-        # Configura o campo de matrícula para aceitar apenas números
-        self.fields['fiscal_registration'].widget.attrs['pattern'] = '\d{7}'
-        self.fields['fiscal_registration'].widget.attrs['title'] = 'A matrícula deve conter exatamente 7 dígitos'
-        self.fields['alternate_fiscal_registration'].widget.attrs['pattern'] = '\d{7}'
-        self.fields['alternate_fiscal_registration'].widget.attrs['title'] = 'A matrícula deve conter exatamente 7 dígitos'
+        # Configura os campos de matrícula e CNPJ
+        self.fields['fiscal_registration'].widget.attrs.update({
+            'pattern': '\d{7}',
+            'title': 'A matrícula deve conter exatamente 7 dígitos',
+            'oninput': 'formatFiscalRegistration($(this))',
+            'maxlength': '7'
+        })
+        
+        self.fields['alternate_fiscal_registration'].widget.attrs.update({
+            'pattern': '\d{7}',
+            'title': 'A matrícula deve conter exatamente 7 dígitos',
+            'oninput': 'formatFiscalRegistration($(this))',
+            'maxlength': '7'
+        })
+        
+        # Configura o campo CNPJ
+        self.fields['company_cnpj'].widget.attrs.update({
+            'oninput': 'formatCNPJ($(this))',
+            'placeholder': '00.000.000/0000-00',
+            'maxlength': '18'
+        })
         
         # Define o valor padrão da moeda como BRL e esconde o campo
         self.fields['currency'].initial = 'BRL'
@@ -165,14 +181,25 @@ class ContractForm(forms.ModelForm):
         self.fields['contract_number'].widget.attrs['class'] = 'form-control-plaintext'
         self.fields['contract_number'].help_text = 'Número gerado automaticamente no formato CTR-YYYY-NNN'
     
+    def clean_company_cnpj(self):
+        cnpj = self.cleaned_data.get('company_cnpj', '').replace('.', '').replace('/', '').replace('-', '')
+        if cnpj and (not cnpj.isdigit() or len(cnpj) != 14):
+            raise forms.ValidationError('CNPJ inválido. O CNPJ deve conter 14 dígitos.')
+        # Formata o CNPJ para o formato 00.000.000/0000-00
+        if cnpj:
+            cnpj = f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:14]}"
+        return cnpj
+    
     def clean_fiscal_registration(self):
-        fiscal_registration = self.cleaned_data.get('fiscal_registration')
+        fiscal_registration = self.cleaned_data.get('fiscal_registration', '')
+        fiscal_registration = ''.join(filter(str.isdigit, str(fiscal_registration)))
         if fiscal_registration and (not fiscal_registration.isdigit() or len(fiscal_registration) != 7):
             raise forms.ValidationError('A matrícula deve conter exatamente 7 dígitos.')
         return fiscal_registration
     
     def clean_alternate_fiscal_registration(self):
-        alt_registration = self.cleaned_data.get('alternate_fiscal_registration')
+        alt_registration = self.cleaned_data.get('alternate_fiscal_registration', '')
+        alt_registration = ''.join(filter(str.isdigit, str(alt_registration)))
         if alt_registration and (not alt_registration.isdigit() or len(alt_registration) != 7):
             raise forms.ValidationError('A matrícula deve conter exatamente 7 dígitos.')
         return alt_registration

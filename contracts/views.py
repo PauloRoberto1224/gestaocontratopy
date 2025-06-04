@@ -219,6 +219,14 @@ class ContractCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         return reverse_lazy('contracts:contract_detail', kwargs={'pk': self.object.pk})
     
     def form_valid(self, form):
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Log dos dados recebidos
+        logger.info(f"Dados do formulário: {self.request.POST}")
+        logger.info(f"Arquivos recebidos: {self.request.FILES}")
+        logger.info(f"Dados limpos: {form.cleaned_data}")
+        
         # Processa o valor monetário antes de salvar
         if 'value' in form.cleaned_data and form.cleaned_data['value']:
             try:
@@ -645,6 +653,24 @@ class ContractReminderCreateView(LoginRequiredMixin, PermissionRequiredMixin, Cr
         response = super().form_valid(form)
         messages.success(self.request, _('Lembrete criado com sucesso!'))
         return response
+    
+    def form_invalid(self, form):
+        """Handle invalid form submission with better error handling."""
+        # Se for uma requisição AJAX, retorna os erros em formato JSON
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest' or self.request.GET.get('format') == 'json':
+            from django.http import JsonResponse
+            return JsonResponse({
+                'status': 'error',
+                'errors': form.errors.get_json_data(),
+                'message': 'Por favor, corrija os erros abaixo.'
+            }, status=400)
+            
+        # Para requisições normais, adiciona as mensagens de erro
+        for field, errors in form.errors.items():
+            field_label = form.fields[field].label if field in form.fields else field
+            for error in errors:
+                messages.error(self.request, f"{field_label}: {error}")
+        return super().form_invalid(form)
     
     def get_initial(self):
         initial = super().get_initial()

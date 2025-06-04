@@ -98,6 +98,44 @@
         border-left: 4px solid #842029;
     }
     
+    /* Estilo para o campo de termo aditivo quando estiver oculto */
+    #additive-term-field[style*="display: none"] {
+        display: none !important;
+    }
+    
+    /* Estilos para mensagens de validação */
+    .was-validated .form-control:invalid,
+    .was-validated .form-select:invalid,
+    .was-validated .form-check-input:invalid {
+        border-color: #dc3545;
+        padding-right: calc(1.5em + 0.75rem);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    
+    .was-validated .form-control:invalid:focus,
+    .was-validated .form-select:invalid:focus,
+    .was-validated .form-check-input:invalid:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    }
+    
+    .invalid-feedback {
+        display: none;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
+    }
+    
+    .was-validated .form-control:invalid ~ .invalid-feedback,
+    .was-validated .form-select:invalid ~ .invalid-feedback,
+    .was-validated .form-check-input:invalid ~ .invalid-feedback {
+        display: block;
+    }
+    
     .notification-warning {
         background-color: #fff3cd;
         color: #664d03;
@@ -208,7 +246,23 @@
                         {{ form.company|as_crispy_field }}
                     </div>
                     <div class="col-md-6 mb-3">
-                        {{ form.contract_term|as_crispy_field }}
+                        <div class="form-group">
+                            <label for="id_company_cnpj" class="form-label">{{ form.company_cnpj.label }}</label>
+                            <input type="text" name="{{ form.company_cnpj.name }}" id="id_company_cnpj"
+                                   class="form-control" value="{{ form.company_cnpj.value|default:'' }}"
+                                   oninput="formatCNPJ($(this))"
+                                   placeholder="00.000.000/0000-00"
+                                   maxlength="18"
+                                   {% if form.company_cnpj.field.required %}required{% endif %}>
+                            {% if form.company_cnpj.help_text %}
+                                <small class="form-text text-muted">{{ form.company_cnpj.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div id="contract-term-field">
+                            {{ form.contract_term|as_crispy_field }}
+                        </div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="form-group">
@@ -298,9 +352,12 @@
                             {{ form.additive_term|as_crispy_field }}
                             <div class="file-preview mt-2"></div>
                         </div>
-                        <small class="form-text text-muted">
+                        <small id="additive-term-help" class="form-text text-muted">
                             Obrigatório apenas para termos aditivos. Formato: PDF, DOC, DOCX (Tamanho máximo: 10MB)
                         </small>
+                        <div id="additive-term-required" class="text-danger small mt-1 d-none">
+                            <i class="bi bi-exclamation-circle-fill"></i> Este campo é obrigatório para termos aditivos.
+                        </div>
                     </div>
                 </div>
 
@@ -338,6 +395,337 @@
 {% block extra_js %}
 <!-- Inicialização do formulário -->
 <script>
+// Função para mostrar/ocultar o campo de termo aditivo
+function toggleAdditiveTermField() {
+    const contractTermSelect = document.getElementById('id_contract_term');
+    const additiveTermField = document.getElementById('additive-term-field');
+    const additiveTermInput = document.getElementById('id_additive_term');
+    const additiveTermHelp = document.getElementById('additive-term-help');
+    const additiveTermRequired = document.getElementById('additive-term-required');
+    
+    if (contractTermSelect && additiveTermField) {
+        // Função para verificar e atualizar a visibilidade
+        const updateFieldVisibility = () => {
+            const selectedOption = contractTermSelect.options[contractTermSelect.selectedIndex];
+            const isAdditive = selectedOption && selectedOption.text.toLowerCase().includes('aditivo');
+            const isInitial = selectedOption && selectedOption.text.toLowerCase().includes('inicial');
+            
+            if (isAdditive) {
+                // Mostra o campo para termos aditivos
+                additiveTermField.style.display = 'block';
+                if (additiveTermInput) {
+                    additiveTermInput.required = true;
+                }
+                if (additiveTermHelp) additiveTermHelp.classList.add('d-none');
+                if (additiveTermRequired) additiveTermRequired.classList.remove('d-none');
+            } else {
+                // Oculta o campo para termos iniciais e outros
+                additiveTermField.style.display = 'none';
+                if (additiveTermInput) {
+                    additiveTermInput.required = false;
+                    // Limpa o valor apenas se for um termo inicial
+                    if (isInitial) {
+                        additiveTermInput.value = '';
+                    }
+                    // Limpa qualquer mensagem de erro relacionada
+                    const errorElement = additiveTermField.querySelector('.invalid-feedback');
+                    if (errorElement) {
+                        errorElement.remove();
+                    }
+                    additiveTermInput.classList.remove('is-invalid');
+                }
+                if (additiveTermHelp) additiveTermHelp.classList.remove('d-none');
+                if (additiveTermRequired) additiveTermRequired.classList.add('d-none');
+            }
+            
+            // Força a validação do formulário após a mudança
+            if (typeof validateAdditiveTermField === 'function') {
+                validateAdditiveTermField();
+            }
+        };
+        
+        // Executa na inicialização
+        updateFieldVisibility();
+        
+        // Remove event listeners antigos para evitar duplicação
+        const newContractTermSelect = contractTermSelect.cloneNode(true);
+        contractTermSelect.parentNode.replaceChild(newContractTermSelect, contractTermSelect);
+        
+        // Adiciona o evento de mudança ao novo elemento
+        newContractTermSelect.addEventListener('change', updateFieldVisibility);
+    }
+}
+
+// Executa quando o documento estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    // Adiciona um pequeno atraso para garantir que todos os elementos estejam carregados
+    // 300ms é tempo suficiente para a maioria das situações
+    setTimeout(function() {
+        // Inicializa o toggle do campo de termo aditivo
+        toggleAdditiveTermField();
+        
+        // Adiciona validação personalizada ao formulário
+        const form = document.getElementById('contractForm');
+        if (form) {
+            form.addEventListener('submit', function(event) {
+                const contractTermSelect = document.getElementById('id_contract_term');
+                const additiveTermInput = document.getElementById('id_additive_term');
+                
+                if (contractTermSelect && additiveTermInput) {
+                    const selectedOption = contractTermSelect.options[contractTermSelect.selectedIndex];
+                    const isAdditive = selectedOption && selectedOption.text.toLowerCase().includes('aditivo');
+                    
+                    // Se não for um termo aditivo, remove a validação do campo
+                    if (!isAdditive) {
+                        additiveTermInput.required = false;
+                        additiveTermInput.setCustomValidity('');
+                    } else {
+                        additiveTermInput.required = true;
+                    }
+                }
+            });
+            
+            // Dispara o evento change no carregamento para garantir que o estado inicial esteja correto
+            const contractTermSelect = document.getElementById('id_contract_term');
+            if (contractTermSelect) {
+                contractTermSelect.dispatchEvent(new Event('change'));
+            }
+            
+            // Adiciona evento de mudança ao campo de termo do contrato
+            contractTermSelect.addEventListener('change', function() {
+                // Chama a função para mostrar/ocultar o campo de termo aditivo
+                toggleAdditiveTermField();
+                
+                // Limpa qualquer mensagem de erro anterior
+                const additiveTermInput = document.getElementById('id_additive_term');
+                if (additiveTermInput) {
+                    additiveTermInput.setCustomValidity('');
+                    additiveTermInput.classList.remove('is-invalid');
+                    
+                    // Remove a mensagem de erro visual
+                    const errorElement = additiveTermInput.nextElementSibling;
+                    if (errorElement && errorElement.classList.contains('invalid-feedback')) {
+                        errorElement.style.display = 'none';
+                    }
+                    
+                    // Atualiza as mensagens de ajuda
+                    const additiveTermHelp = document.getElementById('additive-term-help');
+                    const additiveTermRequired = document.getElementById('additive-term-required');
+                    const selectedOption = this.options[this.selectedIndex];
+                    const isAdditive = selectedOption && selectedOption.text.toLowerCase().includes('aditivo');
+                    
+                    if (isAdditive) {
+                        if (additiveTermHelp) additiveTermHelp.classList.add('d-none');
+                        if (additiveTermRequired) additiveTermRequired.classList.remove('d-none');
+                    } else {
+                        if (additiveTermHelp) additiveTermHelp.classList.remove('d-none');
+                        if (additiveTermRequired) additiveTermRequired.classList.add('d-none');
+                    }
+                }
+            });
+            
+            // Função para validar o campo de termo aditivo
+            function validateAdditiveTermField() {
+                const contractTermSelect = document.getElementById('id_contract_term');
+                const additiveTermInput = document.getElementById('id_additive_term');
+                const additiveTermField = document.getElementById('additive-term-field');
+                const additiveTermHelp = document.getElementById('additive-term-help');
+                const additiveTermRequired = document.getElementById('additive-term-required');
+                
+                if (contractTermSelect && additiveTermInput) {
+                    const selectedOption = contractTermSelect.options[contractTermSelect.selectedIndex];
+                    const isAdditive = selectedOption && selectedOption.text.toLowerCase().includes('aditivo');
+                    const isInitial = selectedOption && selectedOption.text.toLowerCase().includes('inicial');
+                    
+                    // Se for um termo aditivo, valida o campo
+                    if (isAdditive) {
+                        additiveTermInput.required = true;
+                        additiveTermField.style.display = 'block';
+                        if (additiveTermHelp) additiveTermHelp.classList.add('d-none');
+                        if (additiveTermRequired) additiveTermRequired.classList.remove('d-none');
+                        
+                        // Se o campo estiver vazio, mostra o erro
+                        if (!additiveTermInput.value) {
+                            additiveTermInput.setCustomValidity('Este campo é obrigatório para termos aditivos.');
+                            additiveTermInput.classList.add('is-invalid');
+                        } else {
+                            additiveTermInput.setCustomValidity('');
+                            additiveTermInput.classList.remove('is-invalid');
+                        }
+                    } 
+                    // Se for um contrato inicial, remove a validação e limpa o valor
+                    else if (isInitial) {
+                        additiveTermInput.required = false;
+                        additiveTermInput.setCustomValidity('');
+                        additiveTermInput.value = '';
+                        additiveTermField.style.display = 'none';
+                        additiveTermInput.classList.remove('is-invalid');
+                        if (additiveTermHelp) additiveTermHelp.classList.remove('d-none');
+                        if (additiveTermRequired) additiveTermRequired.classList.add('d-none');
+                    }
+                    // Para outros casos, apenas remove a validação
+                    else {
+                        additiveTermInput.required = false;
+                        additiveTermInput.setCustomValidity('');
+                        additiveTermField.style.display = 'none';
+                        additiveTermInput.classList.remove('is-invalid');
+                        if (additiveTermHelp) additiveTermHelp.classList.remove('d-none');
+                        if (additiveTermRequired) additiveTermRequired.classList.add('d-none');
+                    }
+                }
+            }
+            
+            // Adiciona validação para submissão AJAX
+            const ajaxSubmitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+            ajaxSubmitButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    // Valida o campo de termo aditivo
+                    validateAdditiveTermField();
+                    
+                    // Verifica se o formulário é válido
+                    if (!form.checkValidity()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Mostra mensagens de validação
+                        form.classList.add('was-validated');
+                        
+                        // Rola até o primeiro campo inválido
+                        const firstInvalid = form.querySelector(':invalid');
+                        if (firstInvalid) {
+                            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            firstInvalid.focus({ preventScroll: true });
+                        }
+                    }
+                });
+            });
+            
+            // Adiciona validação ao evento de submit do formulário
+            form.addEventListener('submit', function(e) {
+                // Valida o campo de termo aditivo
+                validateAdditiveTermField();
+                
+                // Verifica se o formulário é válido
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Mostra mensagens de validação
+                    form.classList.add('was-validated');
+                    
+                    // Rola até o primeiro campo inválido
+                    const firstInvalid = form.querySelector(':invalid');
+                    if (firstInvalid) {
+                        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstInvalid.focus({ preventScroll: true });
+                    }
+                    return;
+                }
+                
+                // Se o formulário for válido, verifica novamente o campo de termo aditivo
+                // para garantir que a validação esteja correta antes do envio
+                const contractTermSelect = document.getElementById('id_contract_term');
+                const additiveTermInput = document.getElementById('id_additive_term');
+                
+                if (contractTermSelect && additiveTermInput) {
+                    const selectedOption = contractTermSelect.options[contractTermSelect.selectedIndex];
+                    const isAdditive = selectedOption && selectedOption.text.toLowerCase().includes('aditivo');
+                    
+                    if (isAdditive && !additiveTermInput.value) {
+                        // Se for um termo aditivo e o campo estiver vazio, impede o envio
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Mostra mensagem de erro
+                        additiveTermInput.setCustomValidity('Por favor, selecione um arquivo para o termo aditivo.');
+                        additiveTermInput.reportValidity();
+                        
+                        // Rola até o campo de termo aditivo
+                        additiveTermInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        additiveTermInput.focus({ preventScroll: true });
+                        
+                        // Adiciona a classe was-validated para garantir que as mensagens de erro sejam exibidas
+                        form.classList.add('was-validated');
+                        
+                        // Adiciona uma classe de erro ao campo
+                        additiveTermInput.classList.add('is-invalid');
+                        
+                        // Garante que a mensagem de erro seja exibida
+                        const errorElement = additiveTermInput.nextElementSibling;
+                        if (errorElement && errorElement.classList.contains('invalid-feedback')) {
+                            errorElement.style.display = 'block';
+                        }
+                    } else if (!isAdditive) {
+                        // Se não for um termo aditivo, garante que o campo não seja obrigatório
+                        additiveTermInput.required = false;
+                        additiveTermInput.setCustomValidity('');
+                    }
+                }
+            });
+            
+            // Adiciona validação ao pressionar Enter em campos de texto
+            const textInputs = form.querySelectorAll('input[type="text"], input[type="number"], textarea');
+            textInputs.forEach(input => {
+                input.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        validateAdditiveTermField();
+                        // Encontra o botão de submit mais próximo e clica nele
+                        const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
+                        if (submitButton) {
+                            submitButton.click();
+                        } else {
+                            form.submit();
+                        }
+                    }
+                });
+            });
+            
+            // Adiciona validação quando o arquivo do termo aditivo for alterado
+            const additiveTermInput = document.getElementById('id_additive_term');
+            if (additiveTermInput) {
+                additiveTermInput.addEventListener('change', function() {
+                    const contractTermSelect = document.getElementById('id_contract_term');
+                    if (contractTermSelect) {
+                        const selectedOption = contractTermSelect.options[contractTermSelect.selectedIndex];
+                        const isAdditive = selectedOption && selectedOption.text.toLowerCase().includes('aditivo');
+                        
+                        if (isAdditive) {
+                            // Se for um termo aditivo e houver um arquivo selecionado
+                            if (this.files && this.files.length > 0) {
+                                // Remove a mensagem de erro se existir
+                                this.setCustomValidity('');
+                                this.classList.remove('is-invalid');
+                                
+                                // Remove a mensagem de erro visual
+                                const errorElement = this.nextElementSibling;
+                                if (errorElement && errorElement.classList.contains('invalid-feedback')) {
+                                    errorElement.style.display = 'none';
+                                }
+                                
+                                // Atualiza a mensagem de ajuda
+                                const additiveTermHelp = document.getElementById('additive-term-help');
+                                const additiveTermRequired = document.getElementById('additive-term-required');
+                                if (additiveTermHelp) additiveTermHelp.classList.add('d-none');
+                                if (additiveTermRequired) additiveTermRequired.classList.remove('d-none');
+                            } else {
+                                // Se não houver arquivo selecionado, mostra a mensagem de erro
+                                this.setCustomValidity('Por favor, selecione um arquivo para o termo aditivo.');
+                                this.classList.add('is-invalid');
+                                
+                                // Mostra a mensagem de erro visual
+                                const errorElement = this.nextElementSibling;
+                                if (errorElement && errorElement.classList.contains('invalid-feedback')) {
+                                    errorElement.style.display = 'block';
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+});
+
 // Define as funções no escopo global
 window.formatCurrencyOnBlur = function(input) {
     // Remove todos os caracteres não numéricos
